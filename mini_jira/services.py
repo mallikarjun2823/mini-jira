@@ -1,12 +1,13 @@
-from .models import Project, ProjectMembership
+from .models import Project, ProjectMembership,ProjectRole
 
 class ProjectService:
     def create_project(self, actor, **data):
         project = Project.objects.create(**data)
+        admin_role = ProjectRole.objects.get(key="admin")
         ProjectMembership.objects.create(
             user=actor,
             project=project,
-            role=ProjectRole.ADMIN
+            role=admin_role
         )
         return project
 

@@ -21,8 +21,12 @@ User = get_user_model()
 class Command(BaseCommand):
     help = "Seed database with sample data"
 
+
     def handle(self, *args, **kwargs):
         self.stdout.write("Seeding data for mini_jira...")
+
+        self.seed_lookup_tables()
+        self.stdout.write("Seeded lookup tables (roles, statuses, priorities)")
 
         users = self.create_users()
         self.stdout.write(f"Created/loaded {len(users)} users")
@@ -34,6 +38,36 @@ class Command(BaseCommand):
         self.stdout.write(f"Created {len(issues)} issues with comments")
 
         self.stdout.write(self.style.SUCCESS("Seeding complete!"))
+
+    def seed_lookup_tables(self):
+        # Project Roles
+        roles = [
+            ("Admin", "ADMIN"),
+            ("Developer", "DEVELOPER"),
+            ("Viewer", "VIEWER"),
+        ]
+        for key, label in roles:
+            ProjectRole.objects.get_or_create(key=key, defaults={"label": label})
+
+        # Issue Statuses
+        statuses = [
+            ("Open", "OPEN"),
+            ("InProgress", "IN_PROGRESS"),
+            ("Resolved", "RESOLVED"),
+            ("Closed", "CLOSED"),
+        ]
+        for key, label in statuses:
+            IssueStatus.objects.get_or_create(key=key, defaults={"label": label})
+
+        # Issue Priorities
+        priorities = [
+            ("Low", "LOW"),
+            ("Medium", "MEDIUM"),
+            ("High", "HIGH"),
+            ("Critical", "CRITICAL"),
+        ]
+        for key, label in priorities:
+            IssuePriority.objects.get_or_create(key=key, defaults={"label": label})
 
     # =========================
     # Users
@@ -104,9 +138,10 @@ class Command(BaseCommand):
 
             admin = random.choice(members)
 
+            admin_role = ProjectRole.objects.get(key="Admin")
+            dev_role = ProjectRole.objects.get(key="Developer")
             for user in members:
-                role = ProjectRole.ADMIN if user == admin else ProjectRole.DEVELOPER
-
+                role = admin_role if user == admin else dev_role
                 ProjectMembership.objects.get_or_create(
                     user=user,
                     project=project,
@@ -166,14 +201,16 @@ class Command(BaseCommand):
 
                 created_at = timezone.now() - timedelta(days=random.randint(0, 90))
 
+                status_obj = random.choice(list(IssueStatus.objects.all()))
+                priority_obj = random.choice(list(IssuePriority.objects.all()))
                 issue = Issue.objects.create(
                     title=random.choice(titles),
                     description=self.random_text(3),
                     project=project,
                     created_by=created_by,
                     assignee=assignee,
-                    status=random.choice(list(IssueStatus.values)),
-                    priority=random.choice(list(IssuePriority.values)),
+                    status=status_obj,
+                    priority=priority_obj,
                     created_at=created_at,
                     updated_at=created_at + timedelta(hours=random.randint(0, 72)),
                 )

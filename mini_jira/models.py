@@ -3,26 +3,30 @@ from django.contrib.auth.models import User
 
 
 # =========================
-# Enums / Choices
+# Lookup Tables
 # =========================
-class ProjectRole(models.TextChoices):
-    ADMIN = "admin", "Admin"
-    DEVELOPER = "developer", "Developer"
-    VIEWER = "viewer", "Viewer"
+class ProjectRole(models.Model):
+    key = models.CharField(max_length=20, unique=True)
+    label = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.label
 
 
-class IssueStatus(models.TextChoices):
-    OPEN = "open", "Open"
-    IN_PROGRESS = "in_progress", "In Progress"
-    RESOLVED = "resolved", "Resolved"
-    CLOSED = "closed", "Closed"
+class IssueStatus(models.Model):
+    key = models.CharField(max_length=20, unique=True)
+    label = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.label
 
 
-class IssuePriority(models.TextChoices):
-    LOW = "low", "Low"
-    MEDIUM = "medium", "Medium"
-    HIGH = "high", "High"
-    CRITICAL = "critical", "Critical"
+class IssuePriority(models.Model):
+    key = models.CharField(max_length=20, unique=True)
+    label = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.label
 
 
 # =========================
@@ -60,7 +64,11 @@ class ProjectMembership(models.Model):
         related_name="memberships"
     )
 
-    role = models.CharField(max_length=20, choices=ProjectRole.choices)
+    role = models.ForeignKey(
+        ProjectRole,
+        on_delete=models.PROTECT,
+        related_name="memberships"
+    )
 
     joined_at = models.DateTimeField(auto_now_add=True)
 
@@ -98,16 +106,16 @@ class Issue(models.Model):
         related_name="assigned_issues"
     )
 
-    status = models.CharField(
-        max_length=20,
-        choices=IssueStatus.choices,
-        default=IssueStatus.OPEN
+    status = models.ForeignKey(
+        IssueStatus,
+        on_delete=models.PROTECT,
+        related_name="issues"
     )
 
-    priority = models.CharField(
-        max_length=20,
-        choices=IssuePriority.choices,
-        default=IssuePriority.MEDIUM
+    priority = models.ForeignKey(
+        IssuePriority,
+        on_delete=models.PROTECT,
+        related_name="issues"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
