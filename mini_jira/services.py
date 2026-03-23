@@ -1,10 +1,7 @@
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Project, ProjectMembership, ProjectRole
-
-
-User = get_user_model()
+from .models import Project, ProjectMembership, ProjectRole,User
 
 
 # =========================

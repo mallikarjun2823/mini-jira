@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 
 import random
 from datetime import timedelta
+import base64
 
 from mini_jira.models import (
     Project,
@@ -13,6 +14,7 @@ from mini_jira.models import (
     ProjectRole,
     IssueStatus,
     IssuePriority,
+    UserDesignation,
 )
 
 User = get_user_model()
@@ -20,6 +22,11 @@ User = get_user_model()
 
 class Command(BaseCommand):
     help = "Seed database with sample data"
+
+    # tiny 1x1 PNG (white) base64
+    AVATAR_PNG_B64 = (
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
+    )
 
 
     def handle(self, *args, **kwargs):
@@ -69,6 +76,16 @@ class Command(BaseCommand):
         for key, label in priorities:
             IssuePriority.objects.get_or_create(key=key, defaults={"label": label})
 
+        # User Designations
+        designations = [
+            ("Engineer", "ENGINEER"),
+            ("Manager", "MANAGER"),
+            ("Designer", "DESIGNER"),
+            ("QA", "QA"),
+        ]
+        for key, label in designations:
+            UserDesignation.objects.get_or_create(key=key, defaults={"label": label})
+
     # =========================
     # Users
     # =========================
@@ -103,7 +120,57 @@ class Command(BaseCommand):
                 user.set_password("password123")
                 user.save()
 
+            # randomly assign avatar to some base users
+            if random.random() < 0.5:
+                try:
+                    user.avatar = base64.b64decode(self.AVATAR_PNG_B64)
+                    user.save()
+                except Exception:
+                    pass
+
             users.append(user)
+
+        # Add some randomly generated users
+        first_names = ["Alex","Sam","Taylor","Jordan","Morgan","Casey","Riley","Avery","Quinn","Rowan"]
+        last_names = ["Lee","Patel","Kim","Singh","Lopez","Nguyen","Garcia","Brown","White","Clark"]
+
+        # create 10 random users
+        for _ in range(10):
+            username = f"user{random.randint(1000,9999)}"
+            # ensure uniqueness
+            while User.objects.filter(username=username).exists():
+                username = f"user{random.randint(1000,9999)}"
+
+            first = random.choice(first_names)
+            last = random.choice(last_names)
+            email = f"{username}@example.com"
+
+            user = User.objects.create_user(
+                username=username,
+                first_name=first,
+                last_name=last,
+                email=email,
+                password="password123",
+            )
+
+            # assign a random designation if available
+            try:
+                desig = random.choice(list(UserDesignation.objects.all()))
+                user.designation = desig
+                user.save()
+            except IndexError:
+                pass
+
+            users.append(user)
+
+        # assign avatars to randomly generated users as well (70% chance)
+        for u in users:
+            if not u.avatar and random.random() < 0.7:
+                try:
+                    u.avatar = base64.b64decode(self.AVATAR_PNG_B64)
+                    u.save()
+                except Exception:
+                    pass
 
         return users
 

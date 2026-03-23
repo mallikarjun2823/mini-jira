@@ -123,3 +123,6 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
 }
+
+# Use the custom User model defined in mini_jira.models
+AUTH_USER_MODEL = 'mini_jira.User'
