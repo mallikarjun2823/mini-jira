@@ -1,5 +1,5 @@
-from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient, APITestCase
+from mini_jira.models import User, ProjectRole
 
 class AuthApiTests(APITestCase):
 	def setUp(self):
@@ -46,10 +46,6 @@ class AuthApiTests(APITestCase):
 		response = self.client.post("/api/login/", payload, format="json")
 		self.assertEqual(response.status_code, 401)
 		self.assertIn("error", response.data)
-
-User = get_user_model()
-
-from mini_jira.models import ProjectRole
 
 class ProjectApiTests(APITestCase):
 	def setUp(self):

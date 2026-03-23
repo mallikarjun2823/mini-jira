@@ -16,8 +16,18 @@ class RegistrationView(APIView):
         service = AuthService()
 
         try:
-            username,email,password = serializer.validated_data["username"],serializer.validated_data["email"],serializer.validated_data["password"]
-            result = service.register_user(username=username, email=email, password=password)
+            username = serializer.validated_data["username"]
+            email = serializer.validated_data["email"]
+            password = serializer.validated_data["password"]
+            designation = serializer.validated_data.get("designation")
+            avatar = serializer.validated_data.get("avatar")
+            result = service.register_user(
+                username=username,
+                email=email,
+                password=password,
+                designation=designation,
+                avatar=avatar,
+            )
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
 

@@ -1,15 +1,13 @@
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Project, ProjectMembership, ProjectRole,User
-
-
+from .models import Project, ProjectMembership, ProjectRole,User,UserDesignation
 # =========================
 # AUTH SERVICES
 # =========================
 class AuthService:
     
-    def register_user(self, username, email, password):
+    def register_user(self, username, email, password, designation=None, avatar=None):
         if User.objects.filter(username=username).exists():
             raise ValueError("Username already exists")
         if User.objects.filter(email=email).exists():
@@ -17,7 +15,9 @@ class AuthService:
         user = User.objects.create_user(
             username=username,
             email=email,
-            password=password
+            password=password,
+            designation=designation,
+            avatar=avatar
         )
 
         tokens = self._generate_tokens(user)

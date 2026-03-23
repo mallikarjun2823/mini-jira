@@ -1,10 +1,12 @@
 from rest_framework import serializers
-from .models import Project, Issue, Comment
+from .models import Project, Issue, Comment, User, UserDesignation
 
 class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField()
     email = serializers.EmailField()
     password = serializers.CharField()
+    designation = serializers.CharField(required=False, allow_blank=True)
+    avatar = serializers.ImageField(required=False)
 
     def validate_username(self, value):
         if not value.strip():
@@ -17,6 +19,14 @@ class UserRegistrationSerializer(serializers.Serializer):
     def validate_password(self, value):
         if not value.strip():
             raise serializers.ValidationError("Password cannot be empty.")
+        return value
+    def validate_designation(self, value):
+        if not value:
+            return value
+        if not value.strip():
+            raise serializers.ValidationError("Designation cannot be empty.")
+        if not UserDesignation.objects.filter(key=value).exists():
+            raise serializers.ValidationError("Invalid designation.")
         return value
 
 class UserLoginSerializer(serializers.Serializer):
