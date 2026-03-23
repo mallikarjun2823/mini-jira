@@ -1,6 +1,37 @@
 from rest_framework import serializers
 from .models import Project, Issue, Comment
 
+class UserRegistrationSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+    def validate_username(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Username cannot be empty.")
+        return value
+    def validate_email(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Email cannot be empty.")
+        return value
+    def validate_password(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Password cannot be empty.")
+        return value
+
+class UserLoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate_username(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Username cannot be empty.")
+        return value
+    def validate_password(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Password cannot be empty.")
+        return value
+
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
