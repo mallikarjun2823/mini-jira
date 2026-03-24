@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models import Project, Issue, Comment, User, UserDesignation
+from .models import Project, Issue, Comment, UserDesignation
 
 class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField()
     email = serializers.EmailField()
     password = serializers.CharField()
     designation = serializers.CharField(required=False, allow_blank=True)
-    avatar = serializers.ImageField(required=False)
+    avatar_file_id = serializers.IntegerField(required=False)
 
     def validate_username(self, value):
         if not value.strip():
@@ -28,6 +28,21 @@ class UserRegistrationSerializer(serializers.Serializer):
         if not UserDesignation.objects.filter(key=value).exists():
             raise serializers.ValidationError("Invalid designation.")
         return value
+
+    def validate_avatar_file_id(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("avatar_file_id must be a positive integer.")
+        return value
+
+
+class AttachmentUploadSerializer(serializers.Serializer):
+    file = serializers.FileField()
+    attachment_type = serializers.CharField()
+
+    def validate_attachment_type(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("attachment_type is required.")
+        return value.strip().lower()
 
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField()

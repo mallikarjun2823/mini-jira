@@ -37,7 +37,13 @@ class IssuePriority(models.Model):
         return self.label
 
 class User(AbstractUser):
-    avatar = models.BinaryField(blank=True, null=True)
+    avatar = models.OneToOneField(
+        "Attachment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="avatar_user",
+    )
     designation = models.ForeignKey(
         UserDesignation,
         on_delete=models.SET_NULL,
@@ -168,3 +174,25 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.created_by.username} on {self.issue.title}"
+
+class Attachment(models.Model):
+    file = models.FileField(upload_to="attachments/")
+    attachment_type = models.CharField(max_length=50)
+    issue = models.ForeignKey(
+        Issue,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="attachments",
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="uploaded_attachments",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.attachment_type}: {self.file.name}"

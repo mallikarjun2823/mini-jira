@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from .serializers import ProjectSerializer, UserRegistrationSerializer,UserLoginSerializer
-from .services import AuthService, ProjectService
+from .serializers import AttachmentUploadSerializer, ProjectSerializer, UserRegistrationSerializer, UserLoginSerializer
+from .services import AttachmentService, AuthService, ProjectService
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -20,13 +20,13 @@ class RegistrationView(APIView):
             email = serializer.validated_data["email"]
             password = serializer.validated_data["password"]
             designation = serializer.validated_data.get("designation")
-            avatar = serializer.validated_data.get("avatar")
+            avatar_file_id = serializer.validated_data.get("avatar_file_id")
             result = service.register_user(
                 username=username,
                 email=email,
                 password=password,
                 designation=designation,
-                avatar=avatar,
+                avatar_file_id=avatar_file_id,
             )
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
@@ -83,3 +83,25 @@ class ProjectListCreateView(APIView):
 
         response_serializer = ProjectSerializer(project)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+class AttachmentUploadView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = AttachmentUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        file = serializer.validated_data["file"]
+        attachment_type = serializer.validated_data["attachment_type"]
+
+        service = AttachmentService()
+        try:
+            actor = request.user if request.user.is_authenticated else None
+            response = service.upload_attachment(
+                actor=actor,
+                file=file,
+                attachment_type=attachment_type
+            )
+            return Response({"message": "Attachment uploaded successfully", "file_id": response.id}, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)

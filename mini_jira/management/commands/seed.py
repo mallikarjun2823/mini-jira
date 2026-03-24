@@ -1,9 +1,12 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from django.core.files.base import ContentFile
+from django.conf import settings
 
 import random
 from datetime import timedelta
 import base64
+from pathlib import Path
 
 from mini_jira.models import (
     Project,
@@ -14,7 +17,8 @@ from mini_jira.models import (
     IssueStatus,
     IssuePriority,
     UserDesignation,
-    User
+    User,
+    Attachment,
 )
 
 
@@ -26,6 +30,8 @@ class Command(BaseCommand):
     AVATAR_PNG_B64 = (
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII="
     )
+
+    ISSUE_TXT_CONTENT = b"Seeded issue attachment for mini_jira."
 
 
     def handle(self, *args, **kwargs):
@@ -121,11 +127,7 @@ class Command(BaseCommand):
 
             # randomly assign avatar to some base users
             if random.random() < 0.5:
-                try:
-                    user.avatar = base64.b64decode(self.AVATAR_PNG_B64)
-                    user.save()
-                except Exception:
-                    pass
+                self.attach_avatar(user)
 
             users.append(user)
 
@@ -164,14 +166,28 @@ class Command(BaseCommand):
 
         # assign avatars to randomly generated users as well (70% chance)
         for u in users:
-            if not u.avatar and random.random() < 0.7:
-                try:
-                    u.avatar = base64.b64decode(self.AVATAR_PNG_B64)
-                    u.save()
-                except Exception:
-                    pass
+            if not u.avatar_id and random.random() < 0.7:
+                self.attach_avatar(u)
 
         return users
+
+    def attach_avatar(self, user):
+        if user.avatar_id:
+            return
+
+        avatar_file_path = Path(settings.BASE_DIR) / "avatar.png"
+        if avatar_file_path.exists():
+            avatar_bytes = avatar_file_path.read_bytes()
+        else:
+            avatar_bytes = base64.b64decode(self.AVATAR_PNG_B64)
+
+        avatar_attachment = Attachment.objects.create(
+            file=ContentFile(avatar_bytes, name=f"avatar-{user.username}.png"),
+            attachment_type="avatar",
+            uploaded_by=user,
+        )
+        user.avatar = avatar_attachment
+        user.save(update_fields=["avatar"])
 
     # =========================
     # Projects + Memberships
@@ -280,6 +296,18 @@ class Command(BaseCommand):
                     created_at=created_at,
                     updated_at=created_at + timedelta(hours=random.randint(0, 72)),
                 )
+
+                # issue attachments (0-3 per issue)
+                for file_index in range(random.randint(0, 3)):
+                    Attachment.objects.create(
+                        file=ContentFile(
+                            self.ISSUE_TXT_CONTENT,
+                            name=f"issue-{issue.id}-attachment-{file_index + 1}.txt",
+                        ),
+                        attachment_type="issue",
+                        issue=issue,
+                        uploaded_by=created_by,
+                    )
 
                 # comments
                 for _ in range(random.randint(1, 4)):
